@@ -173,7 +173,7 @@ class Dofbot(RobotArm):
         # TODO Verify that the Joint Angles exist and are within the capabilities of Dofbot
         # TODO Return the Angles
 
-    def getPositionFromAngles(self, angles: np.ndarray) -> tuple or False:
+    def getPositionFromAngles(self, angles: np.ndarray) -> tuple:
         """
         Finds the end effect position given input angles for the arm using forward kinematics
 
@@ -183,7 +183,7 @@ class Dofbot(RobotArm):
         # Verify the given angles
         assert len(angles) == len(self.servos), "Number of angles does not match number of servos"
         if False in [0 <= angles[i] <= self.limits[i] for i in range(len(angles))]:  # Check if each angle is possible
-            return False
+            return False, False
         # Convert Degrees to Radians
         angles = angles * np.pi / 180
         # Use Forward Kinematics to find the end effect position
