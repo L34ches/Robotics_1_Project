@@ -37,8 +37,6 @@ class Dofbot(RobotArm):
         self.ik_alpha = [90, 0, 0, 90, 0]  # Values of "alpha" for inverse kinematics
         self.ik_d = [self._l[0]+self._l[1], 0, 0, 0, self._l[4]+self._l[5]]  # Values of "d" for inverse kinematics
         self.ik_theta = [0, 0, -90, 0, 0]  # Values of "theta" for inverse kinematics
-        if not self.connect():  # Attempt to connect to Dofbot, raise an error if this doesn't succeed
-            raise ConnectionError("Failed to connect to the Dofbot Arm")
 
     def connect(self) -> bool:
         """
@@ -111,7 +109,6 @@ class Dofbot(RobotArm):
         :param Pot: End Effect Position of the final Position
         :return: An array of the angles with the same length as self.servos or False if no angles exist
         """
-        # TODO Implement getAnglesFromPosition
         q = np.empty((5, 4))
         # Use Inverse Kinematics to Find Joint Angles
         # Find theta using SP4

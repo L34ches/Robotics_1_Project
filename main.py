@@ -1,9 +1,9 @@
 import numpy as np
-import NoConnectionDofbot as db
+import Dofbot as db
 
 
 if __name__ == "__main__":
-    bot = db.NoConnectDofbot()
+    bot = db.Dofbot()
 
     # Test Forward Kinematic Implementation
     q = np.array([90, 90, 90, 90, 90])
