@@ -2,6 +2,7 @@
 import Arm_Lib as armLib
 import numpy as np
 import time as time
+import inverse_kinematics as ik
 from rotation import ex, ey, ez, Rotx, Roty, Rotz
 
 
@@ -36,8 +37,6 @@ class Dofbot(RobotArm):
         self.ik_alpha = [90, 0, 0, 90, 0]  # Values of "alpha" for inverse kinematics
         self.ik_d = [self._l[0]+self._l[1], 0, 0, 0, self._l[4]+self._l[5]]  # Values of "d" for inverse kinematics
         self.ik_theta = [0, 0, -90, 0, 0]  # Values of "theta" for inverse kinematics
-        if not self.connect():  # Attempt to connect to Dofbot, raise an error if this doesn't succeed
-            raise ConnectionError("Failed to connect to the Dofbot Arm")
 
     def connect(self) -> bool:
         """
@@ -102,20 +101,76 @@ class Dofbot(RobotArm):
         """
         return np.array([self.arm.Arm_serial_servo_read(i) for i in self.servos])
 
-    def getAnglesFromPosition(self, Rot, Pot) -> np.ndarray:
+    def getAnglesFromPosition(self, Rot, Pot) -> np.ndarray or bool:
         """
         Finds the Angles corresponding to Rot and Pot using Inverse Kinematics
 
         :param Rot: End Effect Rotation of the final Position
         :param Pot: End Effect Position of the final Position
-        :return: An array of the angles with the same length as self.servos or None is no angles exist
+        :return: An array of the angles with the same length as self.servos or False if no angles exist
         """
-        # TODO Implement getAnglesFromPosition
+        q = np.empty((5, 4))
         # Use Inverse Kinematics to Find Joint Angles
-        # Verify that the Joint Angles exist and are within the capabilities of Dofbot
-        # Return the Angles
+        # Find theta using SP4
+        k = -ey
+        h = ez
+        p = ex
+        d = np.transpose(ez)*Rot*ex
+        thetatmp = ik.subproblem4(h, p, k, d)
+        if len(thetatmp) == 0:
+            return False
+        elif len(thetatmp) == 1:
+            theta = np.array([thetatmp[0], None, thetatmp[0], None], dtype=float)
+        else:
+            theta = np.array([thetatmp[0], thetatmp[1], thetatmp[0], thetatmp[1]], dtype=float)
+        # Find q1 using SP1
+        for i in range(4):
+            if theta[i] is not None:
+                k = -ey
+                p1 = ik.rot(-ey, theta[i])*ex
+                p2 = Rot*ex
+                q[0][i] = ik.subproblem1(p1, k, p2)
+        # Find q5 using SP1
+        for i in range(4):
+            if theta[i] is not None:
+                k = ex
+                p1 = ik.rot(ey, theta[i])*ez
+                p2 = np.transpose(Rot)*ez
+                q[4][i] = ik.subproblem1(p1, k, p2)
+        # Find q3 using SP3
+        for i in range(2):
+            if theta[i] is not None:
+                Pprime = ik.rot(ez, -q[0][i]) * (Pot - self.ik_d[0] * ez)+ik.rot(ey, -theta[i])*self.ik_d[4]*ex
+                k = -ey
+                p1 = self.ik_a[3]*ez
+                p2 = self.ik_a[2]*ex
+                d = np.linalg.norm(Pprime)
+                q3tmp = ik.subproblem3(p1, p2, k, d)
+                if len(q3tmp) == 0:
+                    return False
+                if len(q3tmp) == 1:
+                    q[2][i] = q3tmp
+                else:
+                    q[2][i] = q3tmp[0]
+                    q[2][i+2] = q3tmp[1]
+        # Find q2 using SP1
+        for i in range(4):
+            if q[2][i] is not None:
+                Pprime = ik.rot(ez, -q[0][i]) * (Pot - self.ik_d[0] * ez) + ik.rot(ey, -theta[i]) * self.ik_d[4] * ex
+                k = -ey
+                p1 = (self.ik_a[2]*ex+ik.rot(ey, -q[2][i])*self.ik_a[3]*ez)
+                p2 = Pprime
+                q[1][i] = ik.subproblem1(p1, k, p2)
+        # Find q4 using SP1
+        for i in range(4):
+            if q[2][i] is not None:
+                q[3][i] = theta[i]-q[1][i]-q[2][i]
+        # TODO Remove unnecessary values of q
+        # TODO Convert q to degrees
+        # TODO Verify that the Joint Angles exist and are within the capabilities of Dofbot
+        # TODO Return the Angles
 
-    def getPositionFromAngles(self, angles: np.ndarray) -> tuple or False:
+    def getPositionFromAngles(self, angles: np.ndarray) -> tuple:
         """
         Finds the end effect position given input angles for the arm using forward kinematics
 
@@ -124,8 +179,8 @@ class Dofbot(RobotArm):
         """
         # Verify the given angles
         assert len(angles) == len(self.servos), "Number of angles does not match number of servos"
-        if False in [0 <= angles[i] <= self.limits[i] for i in range(len(angles))]:  # Check if each angle is possoble
-            return False
+        if False in [0 <= angles[i] <= self.limits[i] for i in range(len(angles))]:  # Check if each angle is possible
+            return False, False
         # Convert Degrees to Radians
         angles = angles * np.pi / 180
         # Use Forward Kinematics to find the end effect position
@@ -169,12 +224,16 @@ class Dofbot(RobotArm):
         # Determine the final error of the arm position
         # Return the error
 
-    def setAllServoAnglesVerified(self, angles: np.ndarray, moveTime: float) -> None:
+    def setAllServoAnglesVerified(self, angles: np.ndarray, moveTime: float) -> bool:
         """
         Sets the angles of all servos after verifying that the final position is valid
         :param angles: An array of the angles being set
-        :return: None
+        :return: True if the movement is valid, false if otherwise
         """
         Rot, Pot = self.getPositionFromAngles(angles)
+        if not Rot and Pot:
+            return False
         # TODO Verify that the final position is valid
         self.setAllServoAngles(angles, moveTime)
+        time.sleep(moveTime/1000)
+        return True
