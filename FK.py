@@ -44,7 +44,7 @@ def R0T(q1, q2, q3, q4, q5):
     q3 = degToRad(q3)
     q4 = degToRad(q4)
     q5 = degToRad(q5)
-    return np.matmul(np.matmul(sp.rot(ez, q1), sp.rot(ey, -q2 - q3 - q4)), sp.rot(ex, -q5))
+    return np.matmul(np.matmul(sp.rot(ez, q1), sp.rot(ex, -q2 - q3 - q4)), sp.rot(ey, q5))
 
 # P12 = P45 = 0
 # P0T = P01 + R02 * P23 + R03 * P34 + R05 * P5T
@@ -55,10 +55,10 @@ def P0T(q1, q2, q3, q4, q5):
     q3 = degToRad(q3)
     q4 = degToRad(q4)
     q5 = degToRad(q5)
-    R02 = np.matmul(sp.rot(ez, q1), sp.rot(ey, -q2))
-    R03 = np.matmul(R02, sp.rot(ey, -q3))
-    R05 = np.matmul(np.matmul(R03, sp.rot(ey, -q4)), sp.rot(ex, -q5))
-    return (l0 + l1) * ez + l2 * np.matmul(R02, ex) - l3 * np.matmul(R03, ez) - (l4 + l5) * np.matmul(R05, ex)
+    R02 = np.matmul(sp.rot(ez, q1), sp.rot(ex, -q2))
+    R03 = np.matmul(R02, sp.rot(ex, -q3))
+    R05 = np.matmul(np.matmul(R03, sp.rot(ex, -q4)), sp.rot(ey, q5))
+    return (l0 + l1) * ez - l2 * np.matmul(R02, ey) - l3 * np.matmul(R03, ez) + (l4 + l5) * np.matmul(R05, ey)
 
 # forward kinematics using POE method
 # returns R_0T and P_0T
@@ -68,5 +68,5 @@ def fwkin_POE_Dofbot(q):
     return ROT, POT
 
 if __name__ == "__main__":
-    q = [45, 45, 45, 45, 45]
-    ROT, POT = FK.fwkin_POE_Dofbot(q)
+    q = [90, 45, 135, 45, 135]
+    ROT, POT = fwkin_POE_Dofbot(q)
