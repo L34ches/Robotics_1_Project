@@ -20,11 +20,11 @@ L4 = l4+l5
 
 # Set up the position vectors between subsequent frames
 P01 = (l0+l1)*ez        # translation between base frame and 1 frame in base frame
-P12 = np.zeros((3,1))      # translation between 1 and 2 frame in 1 frame
-P23 = l2*ex             # translation between 2 and 3 frame in 2 frame
+P12 = np.zeros((3,1))   # translation between 1 and 2 frame in 1 frame
+P23 = -l2*ey             # translation between 2 and 3 frame in 2 frame
 P34 = -l3*ez            # translation between 3 and 4 frame in 3 frame
 P45 = np.zeros((3,1))   # translation between 4 and 5 frame in 4 frame
-P5T = -(l4+l5)*ex       # translation between 5 and tool frame in 5 frame
+P5T = (l4+l5)*ey       # translation between 5 and tool frame in 5 frame
 
 # inverse kinematics using subproblems
 # returns all possible combinations of q1 ~ q5
@@ -33,10 +33,10 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     q = np.NaN * np.ones((5,4))
 
     # Get theta = q2+q3+q4 from Rot
-    k = -ey;
+    k = -ex;
     h = ez;
-    p = ex;
-    d = np.matmul(np.transpose(ez), np.matmul(Rot, ex));
+    p = ey;
+    d = np.matmul(np.transpose(ez), np.matmul(Rot, ey));
     thetatmp = sp.subproblem4(h, p, k, d);
     if thetatmp[0] == thetatmp[1]:
         theta = np.array([thetatmp[0], np.NaN, thetatmp[0], np.NaN])
@@ -47,25 +47,25 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     for ii in range(4):
         if not np.isnan(theta[ii]):
             k = ez
-            p1 = np.matmul(sp.rot(ey, -theta[ii]), ex)
-            p2 = np.matmul(Rot, ex)
+            p1 = np.matmul(sp.rot(ex, -theta[ii]), ey)
+            p2 = np.matmul(Rot, ey)
             q[0][ii] = sp.subproblem1(p1, p2, k)
 
     # Get q5 from Rot
     for ii in range(4):
         if not np.isnan(theta[ii]):
-            k = ex
-            p1 = np.matmul(sp.rot(ey, theta[ii]), ez)
+            k = -ey
+            p1 = np.matmul(sp.rot(ex, theta[ii]), ez)
             p2 = np.matmul(np.transpose(Rot), ez)
             q[4][ii] = sp.subproblem1(p1, p2, k)
 
     # Get q3 from Pot
     for ii in range(2):
         if not np.isnan(theta[ii]):
-            Pprime = np.matmul(sp.rot(ez,-q[0][ii]), (Pot-L1 * ez)) + np.matmul(sp.rot(ey,-theta[ii]), L4 * ex)
-            k = -ey
+            Pprime = np.matmul(sp.rot(ez,-q[0][ii]), (Pot-L1 * ez)) - np.matmul(sp.rot(ex,-theta[ii]), L4 * ey)
+            k = -ex
             p1 = l3 * ez
-            p2 = l2 * ex
+            p2 = l2 * -ey
             d = np.linalg.norm(Pprime)
             q3tmp  = sp.subproblem3(p1, p2, k, d)
             if len(q3tmp) == 1:
@@ -77,9 +77,9 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     # Get q2 from Pot
     for ii in range(4):
         if not np.isnan(q[2][ii]):
-            Pprime = np.matmul(sp.rot(ez,-q[0][ii]), (Pot-L1*ez)) + np.matmul(sp.rot(ey,-theta[ii]), L4 * ex)
-            k = -ey;
-            p1 = l2 * ex - l3 * np.matmul(sp.rot(ey, -q[2][ii]), ez)
+            Pprime = np.matmul(sp.rot(ez,-q[0][ii]), (Pot-L1 * ez)) - np.matmul(sp.rot(ex,-theta[ii]), L4 * ey)
+            k = -ex;
+            p1 = -l2 * ey - l3 * np.matmul(sp.rot(ex, -q[2][ii]), ez)
             p2 = Pprime;
             q[1][ii] = sp.subproblem1(p1, p2, k);
 
@@ -108,7 +108,7 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     return q
 
 if __name__ == "__main__":
-    q = [45, 45, 45, 45, 45]
+    q = [90, 45, 135, 45, 135]
     ROT, POT = FK.fwkin_POE_Dofbot(q)
     res = invkin_subproblems_Dofbot(ROT, POT)
     for i in range(np.size(res, 1)):
