@@ -214,20 +214,6 @@ class Dofbot(RobotArm):
         # Return the position
         return Rot, Pot
 
-    def setServoAnglePID(self, servoId: int, angle: float, moveTime: float) -> float:
-        """
-        Sets the angle of a servo using PID control
-
-        :param servoId: The ID of the Servo to be moved
-        :param angle: The angle to set the servo to
-        :param moveTime: The amount of time in milliseconds to move the arm, set to 0 for fastest speed
-        :return: The error between the desired angle and the final angle of the servo
-        """
-        # TODO Implement setServoAnglePID
-        # PID Loop to set position of the arm
-        # Determine the final error of the arm position
-        # Return the error
-
     def setAllServoAnglesVerified(self, angles: np.ndarray, moveTime: float) -> bool:
         """
         Sets the angles of all servos after verifying that the final position is valid
