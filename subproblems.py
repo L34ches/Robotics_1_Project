@@ -6,7 +6,6 @@ import sys
 if (sys.version_info > (3, 0)):
     xrange = range
 
-
 def hat(k):
     """
     Returns a 3 x 3 cross product matrix for a 3 x 1 vector
