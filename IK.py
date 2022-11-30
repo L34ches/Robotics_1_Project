@@ -108,7 +108,7 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     return q
 
 if __name__ == "__main__":
-    q = [90, 45, 135, 45, 135]
+    q = [0, 45, 135, 45, 135]
     ROT, POT = FK.fwkin_POE_Dofbot(q)
     res = invkin_subproblems_Dofbot(ROT, POT)
     for i in range(np.size(res, 1)):
