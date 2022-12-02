@@ -3,7 +3,7 @@ import CameraController as cm
 import numpy as np
 
 
-class SystenController:
+class SystemController:
     def __init__(self):
         """
         Constructor for the controller class that controls the arm behavior
@@ -47,7 +47,7 @@ class SystenController:
         # Take Picture of object to pickup
         res, im = self.camera.takePicture()
         # Identify Location of object
-        PMi = self.camera.identifyTarget(im)
+        PMi = self.camera.identifyTarget(im, "green")
         RCM, PCM, w = self.camera.targetCameraPosition(PMi)
         q = self.arm.readAllServoAngles()
         R0T, P0T = self.arm.getPositionFromAngles(q)
