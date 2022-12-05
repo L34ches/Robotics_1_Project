@@ -1,8 +1,9 @@
 import Dofbot as bot
+import CameraController as cm
 import numpy as np
 
 
-class SystenController:
+class SystemController:
     def __init__(self):
         """
         Constructor for the controller class that controls the arm behavior
@@ -10,8 +11,9 @@ class SystenController:
         self.currentState = 0
         self.defaultAngles = np.array([0, 0, 0, 0, 0])
         self.approximatePayload = np.array([0, 0, 0, 0, 0])
-        self.approximateDropOff = np.array([0, 0, 0, 0, 0])
+        self.approximateDropOff = np.array([45, 125, 0, 0, 90])
         self.arm = bot.Dofbot()
+        self.camera = cm.CameraController()
 
     def run(self):
         # Run startup sequence
@@ -39,9 +41,17 @@ class SystenController:
         self.currentState = 1
 
     def pickupObject(self):
-        # Pickup Object
-        # TODO: Take Picture of object to pickup
-        # TODO: Identify Location of object
+        """
+        Function for the pickup object state, that identifies the object, moves the arm to the object, and picks it up
+        """
+        # Take Picture of object to pickup
+        res, im = self.camera.takePicture()
+        # Identify Location of object
+        PMi = self.camera.identifyTarget(im, "green")
+        RCM, PCM, w = self.camera.targetCameraPosition(PMi)
+        q = self.arm.readAllServoAngles()
+        R0T, P0T = self.arm.getPositionFromAngles(q)
+        R0M, P0M = self.camera.targetBasePosition(RCM, PCM, R0T, P0T)
         # TODO: Plan Path to object
         # TODO: Move to object
         # TODO: Pickup Object
@@ -67,6 +77,8 @@ class SystenController:
     def startUp(self) -> None:
         # Connect to Dofbot arm
         self.arm.connect()
+        # Connect to Camera
+        self.camera.connectCamera()
         # Move arm to default Position
         self.arm.setAllServoAngles(self.defaultAngles, 0.0)
         return None
