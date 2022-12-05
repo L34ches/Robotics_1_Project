@@ -37,6 +37,12 @@ class Dofbot(RobotArm):
         self.ik_alpha = [90, 0, 0, 90, 0]  # Values of "alpha" for inverse kinematics
         self.ik_d = [self._l[0]+self._l[1], 0, 0, 0, self._l[4]+self._l[5]]  # Values of "d" for inverse kinematics
         self.ik_theta = [0, 0, -90, 0, 0]  # Values of "theta" for inverse kinematics
+        self.h = [ez, -ey, -ey, -ey, -ex]  # Values of h for Jacobian calculation
+        self.Pi_i_1 = [np.matrix([[0], [0], [0]], np.dtype(float))] * 6
+        self.Pi_i_1[0] = (self._l[0] + self._l[1]) * ez
+        self.Pi_i_1[2] = self._l[2] * ex
+        self.Pi_i_1[3] = -self._l[3] * ez
+        self.Pi_i_1[5] = -(self._l[4] + self._l[5]) * ex
 
     def connect(self) -> bool:
         """
@@ -170,6 +176,16 @@ class Dofbot(RobotArm):
         # TODO Verify that the Joint Angles exist and are within the capabilities of Dofbot
         # TODO Return the Angles
 
+    def joint2jointRotations(self, angles: np.ndarray) -> list:
+        Ri_i_1 = [np.ndarray((3, 3))] * 6
+        Ri_i_1[0] = Rotz(angles[0])
+        Ri_i_1[1] = Roty(-angles[1])
+        Ri_i_1[2] = Roty(-angles[2])
+        Ri_i_1[3] = Roty(-angles[3])
+        Ri_i_1[4] = Rotx(-angles[4])
+        Ri_i_1[5] = np.identity(3)
+        return Ri_i_1
+
     def getPositionFromAngles(self, angles: np.ndarray) -> tuple:
         """
         Finds the end effect position given input angles for the arm using forward kinematics
@@ -185,44 +201,18 @@ class Dofbot(RobotArm):
         angles = angles * np.pi / 180
         # Use Forward Kinematics to find the end effect position
         # Find R_{i, i+1}
-        Ri_i_1 = [np.ndarray((3, 3))] * 6
-        Ri_i_1[0] = Rotz(angles[0])
-        Ri_i_1[1] = Roty(-angles[1])
-        Ri_i_1[2] = Roty(-angles[2])
-        Ri_i_1[3] = Roty(-angles[3])
-        Ri_i_1[4] = Rotx(-angles[4])
-        Ri_i_1[5] = np.identity(3)
-        # Find P_{i-1, i}
-        Pi_i_1 = [np.matrix([[0], [0], [0]], np.dtype(float))] * 6
-        Pi_i_1[0] = (self._l[0] + self._l[1]) * ez
-        Pi_i_1[2] = self._l[2] * ex
-        Pi_i_1[3] = -self._l[3] * ez
-        Pi_i_1[5] = -(self._l[4] + self._l[5]) * ex
+        Ri_i_1 = self.joint2jointRotations(angles)
         # Calculate Rot and Pot
         Rot = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]], np.dtype(float))
         for mat in Ri_i_1:
             Rot *= mat
         Pot = np.matrix([[0], [0], [0]], np.dtype(float))
-        for i in range(len(Pi_i_1)):
-            Pot += Pi_i_1[-1 - i]
-            if i != len(Pi_i_1) - 1:
+        for i in range(len(self.Pi_i_1)):
+            Pot += self.Pi_i_1[-1 - i]
+            if i != len(self.Pi_i_1) - 1:
                 Pot = Ri_i_1[-2 - i] * Pot
         # Return the position
         return Rot, Pot
-
-    def setServoAnglePID(self, servoId: int, angle: float, moveTime: float) -> float:
-        """
-        Sets the angle of a servo using PID control
-
-        :param servoId: The ID of the Servo to be moved
-        :param angle: The angle to set the servo to
-        :param moveTime: The amount of time in milliseconds to move the arm, set to 0 for fastest speed
-        :return: The error between the desired angle and the final angle of the servo
-        """
-        # TODO Implement setServoAnglePID
-        # PID Loop to set position of the arm
-        # Determine the final error of the arm position
-        # Return the error
 
     def setAllServoAnglesVerified(self, angles: np.ndarray, moveTime: float) -> bool:
         """
@@ -237,3 +227,29 @@ class Dofbot(RobotArm):
         self.setAllServoAngles(angles, moveTime)
         time.sleep(moveTime/1000)
         return True
+
+    def jacobian(self, angles: np.ndarray) -> np.matrix:
+        # Convert Degrees to Radians
+        angles = angles * np.pi / 180
+        # Rotations from joint to joint
+        Ri_i_1 = self.joint2jointRotations(angles)
+        # Base Frame Reference
+        R0i = [np.eye(3)] * 5
+        for i in range(len(R0i)):
+            for j in range(i + 1):
+                R0i[i] = np.matmul(R0i[i], Ri_i_1[j])
+        # Positions of joints in base frame
+        P0i = [np.matrix([[0], [0], [0]], np.dtype(float))] * 6
+        P0i[0] = self.Pi_i_1[0]
+        for i in range(len(P0i) - 1):
+            P0i[i + 1] = P0i[i] + R0i[i] * self.Pi_i_1[i + 1]
+        # Rotation axis in base frame
+        h0 = [np.matmul(R0i[i], self.h[i]) for i in range(len(self.h))]
+        P0T = P0i[-1]
+        # Cross Products
+        cross = [np.cross(np.transpose(h0[i]), np.transpose(P0T - P0i[i])) for i in range(len(h0))]
+        # Construct Jacobian
+        J = np.matrix(np.zeros((6, 5)))
+        for i in range(5):
+            J[:, i] = np.vstack((h0[i], np.transpose(cross[i])))
+        return J
