@@ -26,7 +26,7 @@ objectp3d = np.zeros((1, CHECKERBOARD[0]
                       * CHECKERBOARD[1],
                       3), np.float32)
 objectp3d[0, :, :2] = np.mgrid[0:CHECKERBOARD[0],
-                      0:CHECKERBOARD[1]].T.reshape(-1, 2)
+                      0:CHECKERBOARD[1]].T.reshape(-1, 2)*0.02
 prev_img_shape = None
 
 # Extracting path of individual image stored

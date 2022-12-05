@@ -11,7 +11,7 @@ class SystemController:
         self.currentState = 0
         self.defaultAngles = np.array([0, 0, 0, 0, 0])
         self.approximatePayload = np.array([0, 0, 0, 0, 0])
-        self.approximateDropOff = np.array([0, 0, 0, 0, 0])
+        self.approximateDropOff = np.array([45, 125, 0, 0, 90])
         self.arm = bot.Dofbot()
         self.camera = cm.CameraController()
 

@@ -7,7 +7,7 @@ def empty(*aargs):
 
 def generateMask():
     # Open image and create HSV copy
-    im = cv2.imread("allblocks.png")
+    im = cv2.imread("green_pnp.png")
     cv2.imshow("A", im)
     hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
 
