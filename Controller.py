@@ -1,6 +1,7 @@
 import Dofbot as bot
 import CameraController as cm
 import numpy as np
+import quadprog as qp
 
 
 class SystemController:
@@ -82,3 +83,14 @@ class SystemController:
         # Move arm to default Position
         self.arm.setAllServoAngles(self.defaultAngles, 0.0)
         return None
+
+    def planPath(self, Rc, Pc, Rd, Pd, *args):
+        """
+        Determine path from one position to another
+
+        :param Rc: Current Rotation of arm
+        :param Pc: Current Position of arm
+        :param Rd: Desired Rotation of arm
+        :param Pc: Desired Position of arm
+        """
+        # TODO: Implement path planning algorithm
