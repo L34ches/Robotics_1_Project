@@ -22,6 +22,12 @@ class CameraController:
         self.upper_y = np.array([69, 255, 255])
         self.lower_r = np.array([0, 180, 177])
         self.upper_r = np.array([179, 255, 225])
+        # Block Corners and side length
+        self.block_l = 0.03
+        self.corners = [np.array([0.5*self.block_l, 0.5*self.block_l, 0]),
+                        np.array([-0.5*self.block_l, 0.5*self.block_l, 0]),
+                        np.array([0.5*self.block_l, -0.5*self.block_l, 0]),
+                        np.array([-0.5*self.block_l, -0.5*self.block_l, 0])]
 
     def cameraPose(self, R0T: np.ndarray, P0T: np.ndarray, q) -> tuple:
         """
@@ -33,7 +39,7 @@ class CameraController:
         """
         R5T = rot.Rotx(-q[4])
         R0C = np.matmul(np.matmul(R0T, np.linalg.inv(R5T)), self.RTC)
-        P0C = P0T + np.transpose(np.matmul(R0T, self.PTC))
+        P0C = P0T + np.transpose(np.matmul(np.matmul(R0T, np.linalg.inv(R5T)), self.PTC))
         return R0C, P0C
 
     def targetCameraPosition(self, PMi):
@@ -48,7 +54,7 @@ class CameraController:
         I = np.eye(3)
         C = np.zeros((3*len(PMi), 13))
         for i in range(len(PMi)):
-            kron = np.kron(I, np.array([PMi[i][0], PMi[i][1], 1]))
+            kron = np.kron(I, self.corners[i])
             # Set Kron product values
             C[3*i][0:9] = kron[0][:]
             C[3*i+1][0:9] = kron[1][:]
@@ -158,23 +164,9 @@ if __name__ == '__main__':
     print(points)
     print("Approximated Points")
     print(rect)
-    A = cnt.targetCameraPosition(points)
-    print("Rotation Actual Points")
-    print(A[0])
-    print("Position Actual Points")
-    print(A[1])
-    B = cnt.targetCameraPosition(rect)
-    print("Rotation Approx Points")
-    print(B[0])
-    print("Position Approx Points")
-    print(B[1])
-    print("Rotation Difference")
-    print(np.subtract(A[0], B[0]))
-    print("Position Difference")
-    print(np.subtract(A[1], B[1]))
 
     bot = dof.Dofbot()
-    RCM, PCM, w = cnt.targetCameraPosition(points)
+    RCM, PCM, w = cnt.targetCameraPosition(rect)
     q = np.array([80, 90, 20, 11, 90])
     R0T, P0T = bot.getPositionFromAngles(q)
     R0M, P0M = cnt.targetBasePosition(RCM, PCM, R0T, P0T, q)
