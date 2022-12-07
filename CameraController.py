@@ -11,7 +11,7 @@ class CameraController:
         # TODO: Identify PTC for Dofbot Camera
         self.RTC = np.array([[0, 0, -1], [1, 0, 0], [0, -1, 0]])
         self.PTC = np.array([0.065, 0, -0.048])
-        self.K = np.array([[1020.4105, 0, 354.208471], [0, 034.79599, 238.13645], [0, 0, 1]])# Camera Calibration Matrix
+        self.K = np.array([[1020.4105, 0, 354.208471], [0, 1034.79599, 238.13645], [0, 0, 1]])# Camera Calibration Matrix
         self.Kd = np.array([[-0.025676, -1.6639, -0.015317, -0.0051362, -39.96275]])   # Camera Distortion Matrix
         # Camera connection
         self.camera = None
@@ -97,12 +97,11 @@ class CameraController:
         return R0M, P0M
 
     def takePicture(self):
-        self.connectCamera()
         result, image = self.camera.read()
         return result, image
 
     def connectCamera(self):
-        self.camera = cv2.VideoCapture(-1)
+        self.camera = cv2.VideoCapture(0)
 
     def identifyTarget(self, image, color, display=False):
         if color == "green":

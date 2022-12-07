@@ -1,5 +1,3 @@
-# Import Statements
-import Arm_Lib as armLib
 import numpy as np
 import time as time
 import inverse_kinematics as ik
@@ -44,73 +42,8 @@ class Dofbot(RobotArm):
         self.Pi_i_1[3] = -self._l[3] * ez
         self.Pi_i_1[5] = -(self._l[4] + self._l[5]) * ex
 
-    def connect(self) -> bool:
-        """
-        Connect to the Dofbot arm
-
-        :return: True if connected successfully, otherwise false
-        """
-        self.arm = armLib.Arm_Device()
-        return True if self.arm is not None else False
-
-    def setLED(self, r: int, g: int, b: int) -> None:
-        """
-        Sets the Brightness of the LED using an RGB value
-
-        :param r: The brightness of the red, between 0 and 255
-        :param g: The brightness of the green, between 0 and 255
-        :param b: The brightness of the blue, between 0 and 255
-        :return: None
-        """
-        assert 0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255, "Brightness for LED is out of bounds"
-        self.arm.Arm_RGB_set(r, g, b)
-
-    def soundBuzzer(self, timeOn: int=255) -> None:
-        """
-        Sounds the buzzer.
-
-        :param timeOn: The amount of time to sound the buzzer for in 100s of milliseconds, from 0-255
-        :return: None
-        """
-        self.arm.Arm_Buzzer_On(timeOn)
-
-    def setServoAngle(self, servoId: int, angle: float, moveTime: float) -> int:
-        """
-        Sets a servo to a given angle without PID control.
-
-        :param servoId: The ID of the Servo to be moved
-        :param angle: The angle to set the servo to
-        :param moveTime: The amount of time in milliseconds to move the arm, set to 0 for fastest speed
-        :return: Actual position of the servo in degrees
-        """
-        self.arm.Arm_serial_servo_write(servoId, angle, moveTime)  # Move the Arm
-        time.sleep(moveTime / 1000)  # Wait for the Arm to finish Moving
-        return self.arm.Arm_serial_servo_read(servoId)  # Return the angle the arm ended at
-
-    def setAllServoAngles(self, angles: np.ndarray, moveTime: float) -> None:
-        """
-        Move all servos to the given angle
-
-        :param angles: List of angles to move to. Should be same length as self.servos, and ordered from 1st servo to last
-        :param moveTime: The amount of time in milliseconds to move the arm, set to 0 for fastest speed
-        :return: None
-        """
-        assert len(angles) == len(self.servos), "Not enough Angles to Move Arm"  # Ensure enough angles were given
-        self.arm.Arm_serial_servo_write6(*angles, time=moveTime)  # Begin to move the arm
-        time.sleep(moveTime/1000)  # Wait for the arm to finish moving
-
-    def readAllServoAngles(self) -> np.ndarray:
-        """
-        Reads the angles of all servos
-
-        :return: An ndarray containing the angles for each servo in degrees from 1st servo to last
-        """
-        return np.array([self.arm.Arm_serial_servo_read(i) for i in self.servos])
-
     def getAnglesFromPosition(self, Rot, Pot) -> np.ndarray or bool:
         """
-        DEPRECATED FUNCTION
-
         Finds the Angles corresponding to Rot and Pot using Inverse Kinematics
 
         :param Rot: End Effect Rotation of the final Position
@@ -173,10 +106,10 @@ class Dofbot(RobotArm):
         for i in range(4):
             if q[2][i] is not None:
                 q[3][i] = theta[i]-q[1][i]-q[2][i]
-        # Unfinished: Remove unnecessary values of q
-        # Unfinished: Convert q to degrees
-        # Unfinished: Verify that the Joint Angles exist and are within the capabilities of Dofbot
-        # Unfinished: Return the Angles
+        # TODO Remove unnecessary values of q
+        # TODO Convert q to degrees
+        # TODO Verify that the Joint Angles exist and are within the capabilities of Dofbot
+        # TODO Return the Angles
 
     def joint2jointRotations(self, angles: np.ndarray) -> list:
         Ri_i_1 = [np.ndarray((3, 3))] * 6
@@ -216,22 +149,6 @@ class Dofbot(RobotArm):
         # Return the position
         return Rot, Pot
 
-    def setAllServoAnglesVerified(self, angles: np.ndarray, moveTime: float) -> bool:
-        """
-        DEPRECATED FUNCTION
-
-        Sets the angles of all servos after verifying that the final position is valid
-        :param angles: An array of the angles being set
-        :return: True if the movement is valid, false if otherwise
-        """
-        Rot, Pot = self.getPositionFromAngles(angles)
-        if not Rot and Pot:
-            return False
-        # Unfinished: Verify that the final position is valid
-        self.setAllServoAngles(angles, moveTime)
-        time.sleep(moveTime/1000)
-        return True
-
     def jacobian(self, angles: np.ndarray) -> np.matrix:
         # Convert Degrees to Radians
         angles = angles * np.pi / 180
@@ -257,9 +174,3 @@ class Dofbot(RobotArm):
         for i in range(5):
             J[:, i] = np.vstack((h0[i], np.transpose(cross[i])))
         return J
-
-    def openClaw(self):
-        self.setServoAngle(6, 45.0, 0.0)
-
-    def closeClaw(self):
-        self.setServoAngle(6, 135.0, 0.0)
