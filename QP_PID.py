@@ -115,12 +115,26 @@ def getqp_f_positionOnly(dq, ep):
     return f
 
 if __name__ == "__main__":
-    q0 = np.array([90, 45, 135, 45, 135]) * np.pi / 180
+    q0 = np.array([135, 70, 20, 20, 0]) * np.pi / 180
+    q0 = np.array([0, 45, 135, 45, 135])*np.pi/180
+    #q0 = np.array([180, 90, 0, 0, 90])*np.pi/180
     R0, P0 = FK.fwkin_POE_Dofbot(q0)
-    P0Td = P0 - np.array([[0], [0], [0.05]])
+    P0Td = P0 - np.array([[0.02], [-0.08], [0]])
+    P0Td = P0 - np.array([[0.0], [0], [0.05]])
+    #P0Td = P0 - np.array([[0.12], [0.1], [0]])
     N = 100
     epsilon_p = 0.1
-    Kp = 0.055
-    Ki = 0.02
+    Kp = 0.063
+    Ki = 0
     Kd = 0
     q_lambda, lamb, P0T_lambda, R0T_lambda, Pdes_lambda = qpPathGen_positionOnly(q0, P0Td, epsilon_p, N, Kp, Ki, Kd)
+    #np.save('data.npy', q_lambda)
+    ax = plt.axes(projection ='3d')
+    ax.plot3D(P0T_lambda[0, :], P0T_lambda[1, :], P0T_lambda[2, :], ".")
+    ax.plot3D(Pdes_lambda[0, :], Pdes_lambda[1, :], Pdes_lambda[2, :], "*")
+    ax.set_xlim([-1, 1])
+    #ax.set_ylim([-1, 1])
+    #ax.set_zlim([-0.1, 0.1])
+    #ax.set_xlim([0, 0.2])
+    #ax.set_ylim([0.05, 0.25])
+    print(Pdes_lambda[:, -1] - P0T_lambda[:, -1])
