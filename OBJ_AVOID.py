@@ -49,21 +49,28 @@ def jointSpacePath(tol, Nmax, alpha, q0, P0):
 
 if __name__ == "__main__":
     # set up start point, end point, and circular obstacle in task space
-    q0 = np.array([180, 90, 0, 0, 90]) * np.pi / 180
+    q0 = np.array([135, 90, 20, 0, 90]) * np.pi / 180
     P0 = FK.P0T(q0[0], q0[1], q0[2], q0[3], q0[4])
     P0 = np.reshape(np.array(P0), (-1, 1))
-    Pd = P0[0:2] + np.array([[0.12], [0.01]])
-    c = np.array([[0.06], P0[1]])
+    Pd = P0[0:2] + np.array([[0.01], [-0.15]])
+    c = np.array([P0[0] + 0.01, [0.01]])
+    
+    #q0 = np.array([90, 135, 0, 0, 180]) * np.pi / 180
+    #P0 = FK.P0T(q0[0], q0[1], q0[2], q0[3], q0[4])
+    #P0 = np.reshape(np.array(P0), (-1, 1))
+    #Pd = P0[0:2] + np.array([[0.08], [0]])
+    #c = np.array([P0[0] + 0.03, [-0.01]])
     r = 0.015 * np.sqrt(2)
     n = 100
     
     # set up hyper-parameters
-    k = 25
-    eta = 0.0000001
+    k = 15
+    k = 20
+    eta = 0.0000002
     rho0 = 0.01
     alpha = 0.001
     P = taskSpacePath(k, eta, rho0, alpha, P0, Pd, c, r, n)
-    
+        
     # plot object avoidance path in task space
     obj = plt.Circle((c[0] , c[1]), r, fill = False)
     buf = plt.Circle((c[0] , c[1]), r + rho0, fill = False, linestyle='--')
@@ -72,17 +79,25 @@ if __name__ == "__main__":
     ax.add_patch(buf)
     ax.plot(P[0,:], P[1,:], label=r"Task space obstacle avoidance path (potential field)")
     ax.axis('equal')
-    
+    ax.set_xlabel("X-axis (meters)")
+    ax.set_ylabel("Y-axis (meters)")
+    ax.set_title("Obstacle avoidance path (potential field)")
+    '''
     tol=np.reshape([0.0001,0.0001, 0.0001], (-1, 1))
     Nmax = 5000
     alpha = 50
-    q0 = np.array([[180], [90], [0], [0], [90]]) * np.pi / 180
+    q0 = np.array([[135], [90], [20], [0], [90]]) * np.pi / 180
+    #q0 = np.array([[90], [135], [0], [0], [180]]) * np.pi / 180
     q_lambda, Pest = jointSpacePath(tol, Nmax, alpha, q0, P0)
+    #np.save("objavoidp.npy", q_lambda)
     
     # plot inverse kinematic path in task space
-    ax.plot(Pest[0,:], Pest[1,:], "--", label=r"Task space end effector path (IK)")
+    ax.plot(Pest[0,:], Pest[1,:], "*", label=r"Task space end effector path (IK)")
+    ax.axis('equal')
     ax.legend(loc="upper right")
     ax.set_xlabel("X-axis position")
-    ax.set_xlabel("Y-axis position")
-    ax.set_title("Obstacle avoidance path")
+    ax.set_ylabel("Y-axis position")
+    #ax.set_title("Obstacle avoidance path")
+    ax.set_title("Obstacle avoidance path (IK)")
     plt.show()
+    '''

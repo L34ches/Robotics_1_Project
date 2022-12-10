@@ -92,7 +92,9 @@ def jacobian(q):
     return J
 
 if __name__ == "__main__":
-    q = np.array([90, 45, 135, 45, 135]) * np.pi / 180
+    q = np.array([90, 45, 35, 65, 15]) * np.pi / 180
+    q = np.array([57., 79., 36.,  0., 90.])*np.pi/180
+    q = np.array([90, 45, 35, 65, 15])*np.pi/180
     ROT, POT = fwkin_POE_Dofbot(q)
     jac = jacobian(q)
     print(jac)
