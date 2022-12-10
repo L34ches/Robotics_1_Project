@@ -42,7 +42,6 @@ def invkin_subproblems_Dofbot(Rot,Pot):
         theta = np.array([thetatmp[0], np.NaN, thetatmp[0], np.NaN])
     else:
         theta = np.array([thetatmp[0], thetatmp[1], thetatmp[0], thetatmp[1]])
-
     # Get q1 from Rot
     for ii in range(4):
         if not np.isnan(theta[ii]):
@@ -108,8 +107,9 @@ def invkin_subproblems_Dofbot(Rot,Pot):
     return q
 
 if __name__ == "__main__":
-    q = [0, 45, 135, 45, 135]
+    q = np.array([90, 90, 81, 90, 89]) * np.pi / 180
     ROT, POT = FK.fwkin_POE_Dofbot(q)
+    #POT = np.reshape([0.384, 0.046, 0], (-1, 1))
     res = invkin_subproblems_Dofbot(ROT, POT)
     for i in range(np.size(res, 1)):
         print("Sol {}:".format(i + 1), np.round(res[:, i], 4))

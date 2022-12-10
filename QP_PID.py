@@ -124,17 +124,21 @@ if __name__ == "__main__":
     #P0Td = P0 - np.array([[0.12], [0.1], [0]])
     N = 100
     epsilon_p = 0.1
-    Kp = 0.063
+    Kp = 0#.063
     Ki = 0
     Kd = 0
     q_lambda, lamb, P0T_lambda, R0T_lambda, Pdes_lambda = qpPathGen_positionOnly(q0, P0Td, epsilon_p, N, Kp, Ki, Kd)
     #np.save('data.npy', q_lambda)
     ax = plt.axes(projection ='3d')
-    ax.plot3D(P0T_lambda[0, :], P0T_lambda[1, :], P0T_lambda[2, :], ".")
-    ax.plot3D(Pdes_lambda[0, :], Pdes_lambda[1, :], Pdes_lambda[2, :], "*")
+    ax.plot3D(P0T_lambda[0, :], P0T_lambda[1, :], P0T_lambda[2, :], ".", label=r"Computed Path")
+    ax.plot3D(Pdes_lambda[0, :], Pdes_lambda[1, :], Pdes_lambda[2, :], "*", label=r"Desired Path")
+    ax.legend(loc="upper right")
     ax.set_xlim([-1, 1])
     #ax.set_ylim([-1, 1])
     #ax.set_zlim([-0.1, 0.1])
     #ax.set_xlim([0, 0.2])
     #ax.set_ylim([0.05, 0.25])
+    ax.set_xlabel("Distance in x (meters)")
+    ax.set_ylabel("Distance in y (meters)")
+    ax.set_zlabel("Distance in z (meters)")
     print(Pdes_lambda[:, -1] - P0T_lambda[:, -1])
